@@ -145,6 +145,10 @@ private: // 静的メンバ変数
 	static D3D12_VERTEX_BUFFER_VIEW vbView;
 	// インデックスバッファビュー
 	static D3D12_INDEX_BUFFER_VIEW ibView;
+	//ビルボード行列
+	static XMMATRIX matBillboard;
+	//Y軸周りビルボード行列
+	static XMMATRIX matBillboardY;
 private:// 静的メンバ関数
 	/// <summary>
 	/// デスクリプタヒープの初期化
