@@ -162,11 +162,13 @@ void Object3d::InitializeDescriptorHeap()
 
 void Object3d::InitializeCamera(int window_width, int window_height)
 {
-	// ビュー行列の生成
-	matView = XMMatrixLookAtLH(
-		XMLoadFloat3(&eye),
-		XMLoadFloat3(&target),
-		XMLoadFloat3(&up));
+	//// ビュー行列の生成
+	//matView = XMMatrixLookAtLH(
+	//	XMLoadFloat3(&eye),
+	//	XMLoadFloat3(&target),
+	//	XMLoadFloat3(&up));
+
+	UpdateViewMatrix();
 
 	// 平行投影による射影行列の生成
 	//constMap->mat = XMMatrixOrthographicOffCenterLH(
@@ -600,7 +602,63 @@ void Object3d::CreateModel()
 void Object3d::UpdateViewMatrix()
 {
 	// ビュー行列の更新
-	matView = XMMatrixLookAtLH(XMLoadFloat3(&eye), XMLoadFloat3(&target), XMLoadFloat3(&up));
+	/*matView = XMMatrixLookAtLH(XMLoadFloat3(&eye), XMLoadFloat3(&target), XMLoadFloat3(&up));*/
+	//視点座標
+	XMVECTOR eyePosition = XMLoadFloat3(&eye);
+	//注視点座標
+	XMVECTOR targetPosition = XMLoadFloat3(&target);
+	//(仮の)上座標
+	XMVECTOR upVector = XMLoadFloat3(&up);
+
+	//カメラのZ軸
+	XMVECTOR cameraAxisZ = XMVectorSubtract(targetPosition, eyePosition);
+
+	//0ベクトルを除外
+	assert(!XMVector3Equal(cameraAxisZ, XMVectorZero()));
+	assert(!XMVector3IsInfinite(cameraAxisZ));
+	assert(!XMVector3Equal(upVector, XMVectorZero()));
+	assert(!XMVector3IsInfinite(upVector));
+
+	//ベクトルを正規化
+	cameraAxisZ = XMVector3Normalize(cameraAxisZ);
+
+	//カメラのX軸
+	XMVECTOR cameraAxisX;
+	cameraAxisX = XMVector3Cross(upVector, cameraAxisZ);
+	//ベクトルを正規化
+	cameraAxisX = XMVector3Normalize(cameraAxisX);
+
+	//カメラのY軸
+	XMVECTOR cameraAxisY;
+	cameraAxisY = XMVector3Cross(cameraAxisZ, cameraAxisX);
+	//ベクトルを正規化
+	cameraAxisY = XMVector3Normalize(cameraAxisY);
+
+	//カメラ回転行列
+	XMMATRIX matCameraRot;
+	//カメラ座標系からワールド座標系の変換行列
+	matCameraRot.r[0] = cameraAxisX;
+	matCameraRot.r[1] = cameraAxisY;
+	matCameraRot.r[2] = cameraAxisZ;
+	matCameraRot.r[3] = XMVectorSet(0, 0, 0, 1);
+
+	//転置により逆行列を計算
+	matView = XMMatrixTranspose(matCameraRot);
+
+	//視点座標に-1を掛けた座標
+	XMVECTOR reverseEyePosition = XMVectorNegate(eyePosition);
+	//カメラの位置からワールド原点へのベクトル
+	XMVECTOR tX = XMVector3Dot(cameraAxisX, reverseEyePosition);
+	XMVECTOR tY = XMVector3Dot(cameraAxisY, reverseEyePosition);
+	XMVECTOR tZ = XMVector3Dot(cameraAxisZ, reverseEyePosition);
+
+	//1つのベクトルにまとめる
+	XMVECTOR translation = XMVectorSet(tX.m128_f32[0], tY.m128_f32[1], tZ.m128_f32[2], 1.0f);
+
+	//ビュー変換行列に平行移動成分を設定
+	matView.r[3] = translation;
+
+
 }
 
 bool Object3d::Initialize()
