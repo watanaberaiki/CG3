@@ -36,10 +36,10 @@ public: // サブクラス
 		XMMATRIX matBillboard;	// ビルボード行列
 	};
 
-	//// 定数バッファ用データ構造体（マテリアル）
-	//struct ConstBufferDataMaterial {
-	//	XMFLOAT4 color; // 色 (RGBA)
-	//};
+	// 定数バッファ用データ構造体（マテリアル）
+	struct ConstBufferDataMaterial {
+		XMFLOAT4 color; // 色 (RGBA)
+	};
 
 	//パーティクル一粒
 	struct Particle {
@@ -63,8 +63,8 @@ public: // サブクラス
 		float s_scale = 1.0f;
 		//最終値
 		float e_scale = 0.0f;
-		////色
-		//XMFLOAT4 color = {};
+		//色
+		XMFLOAT4 color = {};
 	};
 
 private: // 定数
@@ -231,7 +231,7 @@ public: // メンバ関数
 	///	<param name="position">初期座標</param>
 	///	<param name="velocity">速度</param>
 	///	<param name="accel">加速度</param>
-	void Add(int life, XMFLOAT3 position, XMFLOAT3 velociy, XMFLOAT3 accel, float start_scale, float end_scale/*,XMFLOAT4 color*/);
+	void Add(int life, XMFLOAT3 position, XMFLOAT3 velociy, XMFLOAT3 accel, float start_scale, float end_scale,XMFLOAT4 color);
 
 private: // メンバ変数
 	ComPtr<ID3D12Resource> constBuff; // 定数バッファ
@@ -239,6 +239,6 @@ private: // メンバ変数
 	// ローカルスケール
 	XMFLOAT3 scale = { 1,1,1 };
 
-	/*ConstBufferDataMaterial* constMapMaterial = nullptr;*/
+	ConstBufferDataMaterial* constMapMaterial = nullptr;
 
 };

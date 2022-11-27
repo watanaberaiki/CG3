@@ -599,9 +599,9 @@ bool ParticleManager::Initialize()
 	assert(SUCCEEDED(result));
 
 
-	////定数バッファのマッピング
-	//result = constBuff->Map(0, nullptr, (void**)&constMapMaterial);
-	//assert((SUCCEEDED(result)));
+	//定数バッファのマッピング
+	result = constBuff->Map(0, nullptr, (void**)&constMapMaterial);
+	assert((SUCCEEDED(result)));
 
 	return true;
 }
@@ -651,8 +651,8 @@ void ParticleManager::Update()
 			vertMap++;
 			//スケール
 			vertMap->scale = it->scale;
-			////色
-			//constMapMaterial->color = it->color;
+			//色
+			constMapMaterial->color = it->color;
 		}
 		vertBuff->Unmap(0, nullptr);
 	}
@@ -686,7 +686,7 @@ void ParticleManager::Draw()
 	cmdList->DrawInstanced((UINT)std::distance(particles.begin(), particles.end()), 1, 0, 0);
 }
 
-void ParticleManager::Add(int life, XMFLOAT3 position, XMFLOAT3 velociy, XMFLOAT3 accel, float start_scale, float end_scale/*,XMFLOAT4 color*/)
+void ParticleManager::Add(int life, XMFLOAT3 position, XMFLOAT3 velociy, XMFLOAT3 accel, float start_scale, float end_scale,XMFLOAT4 color)
 {
 	//リストに要素を追加
 	particles.emplace_front();
@@ -697,5 +697,5 @@ void ParticleManager::Add(int life, XMFLOAT3 position, XMFLOAT3 velociy, XMFLOAT
 	p.velocity = velociy;
 	p.accel = accel;
 	p.num_frame = life;
-	/*p.color = color;*/
+	p.color = color;
 }

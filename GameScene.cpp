@@ -85,15 +85,15 @@ void GameScene::Update()
 		XMFLOAT3 acc{};
 		acc.y = -(float)rand() / RAND_MAX * rnd_acc;
 
-		////色
-		//const float rnd_color = 1.0f;
-		//XMFLOAT4 color{  };
-		//color.x = (float)rand() / RAND_MAX * rnd_color - rnd_color / 2.0f;
-		//color.y = (float)rand() / RAND_MAX * rnd_color - rnd_color / 2.0f;
-		//color.z = (float)rand() / RAND_MAX * rnd_color - rnd_color / 2.0f;
-		//color.w = (float)rand() / RAND_MAX * rnd_color - rnd_color / 2.0f;
+		//色
+		const float rnd_color = 1.0f;
+		XMFLOAT4 color{  };
+		color.x = (float)rand() / RAND_MAX * rnd_color - rnd_color / 2.0f;
+		color.y = (float)rand() / RAND_MAX * rnd_color - rnd_color / 2.0f;
+		color.z = (float)rand() / RAND_MAX * rnd_color - rnd_color / 2.0f;
+		color.w = (float)rand() / RAND_MAX * rnd_color - rnd_color / 2.0f;
 		//追加
-		particleManager->Add(60, pos, vel, acc, 1.0f, 0.0f/*, color*/);
+		particleManager->Add(60, pos, vel, acc, 1.0f, 0.0f, color);
 
 	}
 
