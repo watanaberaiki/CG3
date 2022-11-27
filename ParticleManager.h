@@ -5,11 +5,12 @@
 #include <d3d12.h>
 #include <DirectXMath.h>
 #include <d3dx12.h>
+#include <forward_list>
 
 /// <summary>
 /// 3Dオブジェクト
 /// </summary>
-class Object3d
+class ParticleManager
 {
 private: // エイリアス
 	// Microsoft::WRL::を省略
@@ -22,18 +23,48 @@ private: // エイリアス
 
 public: // サブクラス
 	// 頂点データ構造体
-	struct VertexPosNormalUv
+	struct VertexPos
 	{
 		XMFLOAT3 pos; // xyz座標
-		XMFLOAT3 normal; // 法線ベクトル
-		XMFLOAT2 uv;  // uv座標
+		float scale;
 	};
 
 	// 定数バッファ用データ構造体
 	struct ConstBufferData
 	{
-		XMFLOAT4 color;	// 色 (RGBA)
-		XMMATRIX mat;	// ３Ｄ変換行列
+		XMMATRIX mat;
+		XMMATRIX matBillboard;	// ビルボード行列
+	};
+
+	//// 定数バッファ用データ構造体（マテリアル）
+	//struct ConstBufferDataMaterial {
+	//	XMFLOAT4 color; // 色 (RGBA)
+	//};
+
+	//パーティクル一粒
+	struct Particle {
+		//DirectXを省略
+		using XMFLOAT3 = DirectX::XMFLOAT3;
+
+		//座標
+		XMFLOAT3 position = {};
+		//速度
+		XMFLOAT3 velocity = {};
+		//加速度
+		XMFLOAT3 accel = {};
+		//現在フレーム
+		int frame = 0;
+		//過去フレーム
+		int num_frame = 0;
+
+		//スケール
+		float scale = 1.0f;
+		//初期値
+		float s_scale = 1.0f;
+		//最終値
+		float e_scale = 0.0f;
+		////色
+		//XMFLOAT4 color = {};
 	};
 
 private: // 定数
@@ -41,14 +72,8 @@ private: // 定数
 	static const float radius;				// 底面の半径
 	static const float prizmHeight;			// 柱の高さ
 	static const int planeCount = division * 2 + division * 2;		// 面の数
-
-	//四角形
-	static const int vertexCount = 4;		//頂点数
-	static const int indexCount = 3 * 2;	//インデックス数
-	//頂点データ配列
-	static VertexPosNormalUv vertices[vertexCount];
-	//頂点インデックス配列
-	static unsigned short indices[indexCount];
+	//static const int vertexCount = 30;//頂点数
+	static const int vertexCount = 1024;
 
 public: // 静的メンバ関数
 	/// <summary>
@@ -74,7 +99,7 @@ public: // 静的メンバ関数
 	/// 3Dオブジェクト生成
 	/// </summary>
 	/// <returns></returns>
-	static Object3d* Create();
+	static ParticleManager* Create();
 
 	/// <summary>
 	/// 視点座標の取得
@@ -100,14 +125,17 @@ public: // 静的メンバ関数
 	/// <param name="position">座標</param>
 	static void SetTarget(XMFLOAT3 target);
 
-	/// <summary>
+	/*/// <summary>
 	/// ベクトルによる移動
 	/// </summary>
 	/// <param name="move">移動量</param>
-	static void CameraMoveVector(XMFLOAT3 move);
+	static void CameraMoveVector(XMFLOAT3 move);*/
 
+	/// <summary>
+	/// ベクトルによる視点移動
+	/// </summary>
+	/// <param name="move">移動量</param>
 	static void CameraMoveEyeVector(XMFLOAT3 move);
-
 private: // 静的メンバ変数
 	// デバイス
 	static ID3D12Device* device;
@@ -123,8 +151,6 @@ private: // 静的メンバ変数
 	static ComPtr<ID3D12DescriptorHeap> descHeap;
 	// 頂点バッファ
 	static ComPtr<ID3D12Resource> vertBuff;
-	// インデックスバッファ
-	static ComPtr<ID3D12Resource> indexBuff;
 	// テクスチャバッファ
 	static ComPtr<ID3D12Resource> texbuff;
 	// シェーダリソースビューのハンドル(CPU)
@@ -143,12 +169,15 @@ private: // 静的メンバ変数
 	static XMFLOAT3 up;
 	// 頂点バッファビュー
 	static D3D12_VERTEX_BUFFER_VIEW vbView;
-	// インデックスバッファビュー
-	static D3D12_INDEX_BUFFER_VIEW ibView;
+	// 頂点データ配列
+	static VertexPos vertices[vertexCount];
 	//ビルボード行列
 	static XMMATRIX matBillboard;
-	//Y軸周りビルボード行列
+	//Y軸回りビルボード行列
 	static XMMATRIX matBillboardY;
+	//パーティクル配列
+	std::forward_list<Particle>particles;
+
 private:// 静的メンバ関数
 	/// <summary>
 	/// デスクリプタヒープの初期化
@@ -183,8 +212,6 @@ private:// 静的メンバ関数
 	/// </summary>
 	static void UpdateViewMatrix();
 
-
-
 public: // メンバ関数
 	bool Initialize();
 	/// <summary>
@@ -198,30 +225,20 @@ public: // メンバ関数
 	void Draw();
 
 	/// <summary>
-	/// 座標の取得
+	/// パーティクルの追加
 	/// </summary>
-	/// <returns>座標</returns>
-	const XMFLOAT3& GetPosition() const { return position; }
-
-	/// <summary>
-	/// 座標の設定
-	/// </summary>
-	/// <param name="position">座標</param>
-	void SetPosition(const XMFLOAT3& position) { this->position = position; }
+	///	<param name="life">生存時間</param>
+	///	<param name="position">初期座標</param>
+	///	<param name="velocity">速度</param>
+	///	<param name="accel">加速度</param>
+	void Add(int life, XMFLOAT3 position, XMFLOAT3 velociy, XMFLOAT3 accel, float start_scale, float end_scale/*,XMFLOAT4 color*/);
 
 private: // メンバ変数
 	ComPtr<ID3D12Resource> constBuff; // 定数バッファ
-	// 色
-	XMFLOAT4 color = { 1,1,1,1 };
+
 	// ローカルスケール
 	XMFLOAT3 scale = { 1,1,1 };
-	// X,Y,Z軸回りのローカル回転角
-	XMFLOAT3 rotation = { 0,0,0 };
-	// ローカル座標
-	XMFLOAT3 position = { 0,0,0 };
-	// ローカルワールド変換行列
-	XMMATRIX matWorld;
-	// 親オブジェクト
-	Object3d* parent = nullptr;
-};
 
+	/*ConstBufferDataMaterial* constMapMaterial = nullptr;*/
+
+};
